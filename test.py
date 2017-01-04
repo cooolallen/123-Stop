@@ -33,9 +33,37 @@ print(cv2.cvtColor(cam.read()[1],cv2.COLOR_RGB2GRAY).shape)
 # t_plus = cam.read()[1]
 
 # Initialize temp
-thres = 150000
+thres = 14.5
 flag = 0
+start = 0
+count = 0  # duration
 color_img = cam.read()[1] 
+while(start==0):
+    cv2.imshow(winName, color_img)
+    color_img = cam.read()[1]
+    gray = cv2.cvtColor(color_img,cv2.COLOR_RGB2GRAY)
+    faces = faceCascade.detectMultiScale(
+        gray,
+        scaleFactor=1.1,
+        minNeighbors=10,#5,
+        minSize=(30, 30),
+        flags=cv2.CASCADE_SCALE_IMAGE
+    )
+    for (x, y, w, h) in faces:
+        if(w>37 and h>37 and start==0):
+            print("Back!")
+            print(w,h)
+        elif(w<=37 and h <= 37 and count<=10 and start==0):
+            count = count+1
+        elif(count>10 and start==0):
+            print("start")
+            start = 1
+        cv2.rectangle(color_img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+    if cv2.waitKey(10)==27:
+        cv2.destroyWindow(winName)
+        break
+print("=============================================================================")
+
 while True:
     # Capture frame-by-frame
     cv2.imshow(winName, color_img)
@@ -56,6 +84,7 @@ while True:
     )
     temp = diffImg(t_minus,t,t_plus) 
     size = gray.shape
+
     for (x, y, w, h) in faces:
         index = x-w #int(round(w/2))
         if (index <=0):
@@ -75,19 +104,22 @@ while True:
         else:
             end_y = index
         cv2.rectangle(color_img, (start_x, y), (end_x, end_y), (0, 255, 0), 2)
-
+        # print(faces[0][0])
+        
         # print(temp[y:end_y][start_x:end_x])
+
 
     total = 0
     for row in temp[y:end_y+1]:
         total = total + sum(row[start_x:end_x+1])
-    # print(total)
-    if (total>thres and flag==0):
-      flag = 1
-      print(flag)
+    total = total/(w*h)
+    print(total)
+    if (total>thres):# and flag==0):
+        flag = 1
+        print("You MOVE")
     elif(total<=thres and flag ==1):
-      flag = 0
-      print(flag)
+        flag = 0
+        print("Freeze")
 
     # t_plus = cam.read()[1]
     if cv2.waitKey(10)==27:
