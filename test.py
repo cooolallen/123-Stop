@@ -1,3 +1,4 @@
+"""
 import cv2
 import sys
 
@@ -125,8 +126,11 @@ while True:
     if cv2.waitKey(10)==27:
         cv2.destroyWindow(winName)
         break
+
+"""
 """
 # When everything is done, release the capture
 video_capture.release()
 cv2.destroyAllWindows()
 """
+

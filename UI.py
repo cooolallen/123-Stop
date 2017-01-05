@@ -12,12 +12,14 @@ from ui_GuessWhatDialog import Ui_GuessWhatDialog
 from ui_MessageDialog import Ui_MessageDialog
 
 class MainWindow(QMainWindow):
-    def __init__(self,mode1_fun,parent=None):
+    def __init__(self,mode1_fun,mode2_fun,parent=None):
         super(MainWindow, self).__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.guessDialog = None
         self.mode1_fun = mode1_fun
+        self.mode2_fun = mode2_fun
+        self.ui.verticalLayout_2.setStretch(0,100)
         self.show()
 
         # Connection
@@ -26,8 +28,11 @@ class MainWindow(QMainWindow):
     def showGuess(self):
         self.guessDialog = GuessWhatDialog(self)
 
-    def mode1_trigger(self,mode1_fun):
-        mode1_fun()
+    def mode1_trigger(self):
+        self.mode1_fun()
+
+    def mode2_trigger(self):
+        self.mode2_fun()
 
 
 class GuessWhatDialog(QDialog):
@@ -129,8 +134,10 @@ class GuessWhatDialog(QDialog):
             # self.timer.timeout.disconnect(self.window_close)
             self.close()
             self.message.close()
-            # if(self.result=='win'):
-            self.parent.mode1_trigger(self.parent.mode1_fun)
+            if(self.result=='win'):
+                self.parent.mode1_trigger()
+            else:
+                self.parent.mode2_trigger()
 
 class MessageDialog(QDialog):
     def __init__(self,state,parent=None):
@@ -148,13 +155,13 @@ class MessageDialog(QDialog):
             self.ui.PictureHolder.setPixmap(QPixmap("./figures/lose.png"))
         elif(self.state=='win'):
             self.ui.PictureHolder.setPixmap(QPixmap("./figures/win.png"))
-        elif(self.state=='fiar'):#Fair
+        elif(self.state=='fair'):#Fair
             self.ui.PictureHolder.setPixmap(QPixmap("./figures/fair.png"))
         elif(self.state=='back'):
-            self.ui.PictureHolder.setText("Back\nBack\nBack\nBack\nBack\n")
+            self.ui.PictureHolder.setPixmap(QPixmap("./figures/back.png"))
         elif(self.state=='start'):
-            self.ui.PictureHolder.setText("Start\nStart\nStart\nStart\nStart\n")
+            self.ui.PictureHolder.setPixmap(QPixmap("./figures/start.png"))
         elif(self.state=='move'):
-            self.ui.PictureHolder.setText("move\nmove\nmove\nmove\nmove\nmove\n")
+            self.ui.PictureHolder.setPixmap(QPixmap("./figures/move.png"))
         elif(self.state=='freeze'):
-            self.ui.PictureHolder.setText("freeze\nfreeze\nfreeze\nfreeze\nfreeze\n")
+            self.ui.PictureHolder.setPixmap(QPixmap("./figures/freeze.png"))

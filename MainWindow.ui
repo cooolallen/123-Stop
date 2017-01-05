@@ -6,12 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>535</width>
-    <height>363</height>
+    <width>500</width>
+    <height>333</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>User Control Pad</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">MainWindow{
+background:url(./figures/background.jpg);
+background-repeat: none;
+}</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
@@ -20,40 +26,14 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
-         <spacer name="horizontalSpacer">
+         <spacer name="verticalSpacer">
           <property name="orientation">
-           <enum>Qt::Horizontal</enum>
+           <enum>Qt::Vertical</enum>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QLabel" name="TitleLabel">
-          <property name="font">
-           <font>
-            <family>Consolas</family>
-            <pointsize>25</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>User Control Pad</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
+            <width>20</width>
+            <height>40</height>
            </size>
           </property>
          </spacer>
@@ -104,7 +84,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>535</width>
+     <width>500</width>
      <height>22</height>
     </rect>
    </property>

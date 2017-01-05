@@ -6,18 +6,21 @@ import cv2
 
 from UI import *
 
+
 def mode1_camera():
-    #Initial setup.
+    # Initial setup.
     faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
     cam = cv2.VideoCapture(0)
     winName = "Mode1"
     cv2.namedWindow(winName, cv2.WINDOW_AUTOSIZE)
-    bb_thres = 200#37
-    thres = 14.5
+    bb_thres = 200  # 100
+    approach_thres = 50
+    thres = 20
     flag = False
     start = False
     count = 0  # duration
     myMessage = None
+    result = None
 
     while not start:
         color_img = cam.read()[1]
@@ -31,7 +34,7 @@ def mode1_camera():
         )
         for (x, y, w, h) in faces:
             if (w > bb_thres and h > bb_thres):
-                print("Back!",w,h)
+                print("Back!", w, h)
                 if myMessage is None:
                     myMessage = MessageDialog('back')
             elif (w <= bb_thres and h <= bb_thres and count <= 10):
@@ -42,13 +45,11 @@ def mode1_camera():
                     myMessage.state = 'start'
                     myMessage.setPicture()
 
-
-
                 start = True
             cv2.rectangle(color_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-        cv2.imshow(winName, cv2.resize(color_img,(640,480)))
-        if cv2.waitKey(10)& 0xFF == ord('q'):
+        cv2.imshow(winName, cv2.resize(color_img, (640, 480)))
+        if cv2.waitKey(10) & 0xFF == ord('q'):
             break
 
     print("=============================================================================")
@@ -56,6 +57,7 @@ def mode1_camera():
     t = cv2.cvtColor(cam.read()[1], cv2.COLOR_BGR2GRAY)
     t_plus = cv2.cvtColor(cam.read()[1], cv2.COLOR_BGR2GRAY)
 
+    approach = False
     while True:
         # Pushing back
         t_minus = t
@@ -95,38 +97,158 @@ def mode1_camera():
                 end_y = size[0]
             else:
                 end_y = index
-            cv2.rectangle(color_img, (start_x, y), (end_x, end_y), (0, 255, 0), 2)
-            # print(faces[0][0])
 
-            # print(temp[y:end_y][start_x:end_x])
+            # Energy Calculation
+            if (end_y - y >= size[0] - 10):
+                approach = True
+                approach_start_x = 0
+                approach_end_x = size[1]
 
-        # Energy Calculation
-        total = 0
-        for row in temp[y:end_y + 1]:
-            total = total + sum(row[start_x:end_x + 1])
-        total = total / (w * h)
-        print(total)
-        if (total > thres):  # and flag==0):
-            flag = 1
-            print("You MOVE")
-            if myMessage is not None:
-                myMessage.state = 'move'
-                myMessage.setPicture()
+            total = 0
+            for row in temp[y:end_y + 1]:
+                total = total + sum(row[start_x:end_x + 1])
+            total = total / (w * h)
+            print(total)
+            if (total > thres):  # and flag==0):
+                flag = True
+                cv2.rectangle(color_img, (start_x, y), (end_x, end_y), (0, 0, 255), 2)  # BGR
+                print("You MOVE")
+                if myMessage is not None:
+                    myMessage.state = 'move'
+                    myMessage.setPicture()
 
-        elif (total <= thres and flag == 1):
-            flag = 0
-            print("Freeze")
-            if myMessage is not None:
-                myMessage.state = 'freeze'
-                myMessage.setPicture()
+            elif (total <= thres):  # and flag == 1):
+                flag = False
+                cv2.rectangle(color_img, (start_x, y), (end_x, end_y), (0, 255, 0), 2)
+                print("Freeze")
+                if myMessage is not None:
+                    myMessage.state = 'freeze'
+                    myMessage.setPicture()
 
-        cv2.imshow(winName, cv2.resize(color_img,(640,480)))
-        if cv2.waitKey(10)& 0xFF == ord('q'):
+        # Approach
+        if (approach and len(faces) == 0):
+            total = 0
+            for row in temp[0:size[0] + 1]:
+                total = total + sum(row[approach_start_x:approach_end_x + 1])
+            total = total / (w * h)
+            print(total)
+            if (total > approach_thres):  # and flag==0):
+                flag = 1
+                cv2.rectangle(color_img, (approach_start_x, 0), (approach_end_x, size[0]), (0, 0, 255), 2)  # BGR
+                print("You MOVE APPROACH")
+            elif (total <= approach_thres):  # and flag ==1):
+                flag = 0
+                cv2.rectangle(color_img, (approach_start_x, 0), (approach_end_x, size[0]), (0, 255, 0), 2)
+                print("Freeze APPROACH")
+
+
+
+
+
+        # update frame
+        cv2.imshow(winName, cv2.resize(color_img, (640, 480)))
+
+        k = cv2.waitKey(10)
+        if k == ord('q'):
+            break
+        elif k==32:#space
+            print('win')
+            result = True
+            break
+
+    ## Result Judge
+    if result is not None:
+        if result:
+            myMessage.close()
+            player_win_img = cv2.imread('./figures/player_win.png')
+            cv2.imshow(winName, cv2.resize(player_win_img, (640, 480)))
+        else:
+            myMessage.state = 'catched'
+            myMessage.setPicture()
+    else:
+        cv2.destroyWindow(winName)
+        cam.release()
+        return
+
+    # wait and quit
+    while True:
+        k = cv2.waitKey(10)
+        if k == ord('q'):
             cv2.destroyWindow(winName)
             break
 
+
 def mode2_camera():
-    pass
+    # Initial Setup
+    faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+    cam = cv2.VideoCapture(0)
+    winName = "Mode2"
+    cv2.namedWindow(winName, cv2.WINDOW_AUTOSIZE)
+    start = False
+    count = 0  # duration
+
+    # Wiating for starting
+    while not start:
+        frame = cam.read()[1]
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        faces = faceCascade.detectMultiScale(
+            gray,
+            scaleFactor=1.1,
+            minNeighbors=10,  # 5,
+            minSize=(30, 30),
+            flags=cv2.CASCADE_SCALE_IMAGE
+        )
+        if (len(faces) == 0):
+            print("Please be in front of camera")
+        elif (count == 10):
+            print("Start")
+            start = True
+        else:
+            print("count = ", count)
+            count += 1
+        for (x, y, w, h) in faces:
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+        # Display the resulting frame
+        cv2.imshow(winName, frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    print("============================================================================")
+
+    while True:
+        # Capture frame-by-frame
+        frame = cam.read()[1]
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        faces = faceCascade.detectMultiScale(
+            gray,
+            scaleFactor=1.1,
+            minNeighbors=10,  # 5,
+            minSize=(30, 30),
+            flags=cv2.CASCADE_SCALE_IMAGE
+        )
+
+        if (len(faces) == 0):
+            print("play music")
+        else:
+            print("stop music")
+        for (x, y, w, h) in faces:
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+        # Display the resulting frame
+        cv2.imshow(winName, frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # When everything is done, release the capture
+    cam.release()
+    cv2.destroyAllWindows()
 
 def diffImg(t0, t1, t2):
     d1 = cv2.absdiff(t2, t1)
@@ -135,6 +257,6 @@ def diffImg(t0, t1, t2):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    mainWindow = MainWindow(mode1_camera)
+    mainWindow = MainWindow(mode1_camera,mode2_camera)
 
     sys.exit(app.exec_())
