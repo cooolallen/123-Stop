@@ -2,7 +2,7 @@
 from PyQt5.QtWidgets import QApplication
 import sys
 import cv2
-
+import random
 
 from UI import *
 
@@ -141,10 +141,6 @@ def mode1_camera():
                 cv2.rectangle(color_img, (approach_start_x, 0), (approach_end_x, size[0]), (0, 255, 0), 2)
                 print("Freeze APPROACH")
 
-
-
-
-
         # update frame
         cv2.imshow(winName, cv2.resize(color_img, (640, 480)))
 
@@ -185,7 +181,10 @@ def mode2_camera():
     winName = "Mode2"
     cv2.namedWindow(winName, cv2.WINDOW_AUTOSIZE)
     start = False
+    duration = 5
+    rand_range = 100
     count = 0  # duration
+
 
     # Wiating for starting
     while not start:
@@ -212,13 +211,17 @@ def mode2_camera():
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
         # Display the resulting frame
-        cv2.imshow(winName, frame)
+        cv2.imshow(winName, cv2.resize(frame, (640, 480)))
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     print("============================================================================")
-
+    count = -1
+    w_random = -1
+    h_random = -1
+    r_n = -1
+    judge = JudgeDialog(r_n)
     while True:
         # Capture frame-by-frame
         frame = cam.read()[1]
@@ -235,13 +238,24 @@ def mode2_camera():
 
         if (len(faces) == 0):
             print("play music")
+
+            if count <= duration:
+                count += 1
+                frame, w_random, h_random, r_n = random_number(frame,w_random,h_random,r_n,count, rand_range)
+            else:
+                count=0
+                frame, w_random, h_random, r_n = random_number(frame,w_random,h_random,r_n,count, rand_range)
+
         else:
             print("stop music")
+            judge.num = r_n
+
+
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
         # Display the resulting frame
-        cv2.imshow(winName, frame)
+        cv2.imshow(winName, cv2.resize(frame, (640, 480)))
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -255,8 +269,27 @@ def diffImg(t0, t1, t2):
     d2 = cv2.absdiff(t1, t0)
     return cv2.bitwise_and(d1, d2)
 
+def random_number(frame,w_random,h_random,r_n,count,range):
+
+    print('count=',count,'w=',w_random,'h=',h_random)
+    if count == 0:
+        r_n = random.randint(1, range)
+
+        w_ori,h_ori,_ = frame.shape
+        print(w_ori,h_ori)
+        w_random = random.randint(1,w_ori-30)
+        h_random = random.randint(1,h_ori-190)
+        # w_random = 1280- 190
+        # h_random = 720 - 30
+
+    cv2.putText(frame, str(r_n), (h_random,w_random), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 5, (0, 0, 255), 3, 8)
+
+    return frame,w_random,h_random,r_n
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     mainWindow = MainWindow(mode1_camera,mode2_camera)
 
     sys.exit(app.exec_())
+
+

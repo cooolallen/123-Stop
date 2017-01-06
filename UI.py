@@ -1,6 +1,7 @@
 from PyQt5 import QtCore
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
+from PyQt5.QtMultimedia import QAudioOutput, QAudioFormat
 import sys
 import cv2
 
@@ -10,6 +11,7 @@ import random_comp as rand
 from ui_MainWindow import Ui_MainWindow
 from ui_GuessWhatDialog import Ui_GuessWhatDialog
 from ui_MessageDialog import Ui_MessageDialog
+from ui_JudgeDialog import Ui_JudgeDialog
 
 class MainWindow(QMainWindow):
     def __init__(self,mode1_fun,mode2_fun,parent=None):
@@ -134,10 +136,10 @@ class GuessWhatDialog(QDialog):
             # self.timer.timeout.disconnect(self.window_close)
             self.close()
             self.message.close()
-            if(self.result=='win'):
-                self.parent.mode1_trigger()
-            else:
-                self.parent.mode2_trigger()
+            # if(self.result=='win'):
+            #     self.parent.mode1_trigger()
+            # else:
+            self.parent.mode2_trigger()
 
 class MessageDialog(QDialog):
     def __init__(self,state,parent=None):
@@ -165,3 +167,63 @@ class MessageDialog(QDialog):
             self.ui.PictureHolder.setPixmap(QPixmap("./figures/move.png"))
         elif(self.state=='freeze'):
             self.ui.PictureHolder.setPixmap(QPixmap("./figures/freeze.png"))
+
+class JudgeDialog(QDialog):
+    def __init__(self,num,parent=None):
+        super(JudgeDialog, self).__init__(parent)
+        self.ui = Ui_JudgeDialog()
+        self.ui.setupUi(self)
+        self.num = num
+
+        self.show()
+
+        #Connection
+        self.ui.GuessButton.clicked.connect(self.guess)
+
+    def guess(self):
+        num_guess = self.ui.LineEditGuess.text()
+        if num_guess == str(self.num):
+            print('you win')
+        else:
+            cur_chance_num = int(self.ui.LabelChanceNum.text())
+
+            if cur_chance_num==0:
+                print('you lose')
+            else:
+                self.uiLabelChanceNum.setText(str(cur_chance_num-1))
+
+        self.ui.LineEditGuess.clear()
+
+
+
+
+
+
+class audio_player():
+    def __init__(self,name):
+        self.format = QAudioFormat()  # 2nd Edit
+        # test = QAudioFormat()
+
+        # test.setsamplet
+        self.format.setChannelCount(1)  # 2nd Edit
+        self.format.setSampleRate(22050)  # 2nd Edit
+        self.format.setSampleSize(16)  # 2nd Edit
+        self.format.setCodec("audio/pcm")  # 2nd Edit
+        self.format.setByteOrder(QAudioFormat.LittleEndian)  # 2nd Edit
+        self.format.setSampleType(QAudioFormat.SignedInt)  # 2nd Edit
+
+
+        self.output = QAudioOutput(self.format)
+        self.soundFile = QtCore.QFile()
+        self.soundFile.setFileName(name)
+        self.soundFile.open(QtCore.QIODevice.ReadOnly)
+        self.output.start(self.soundFile)
+
+        print(self.soundFile,'<-------------------------')
+        # self.output.suspend()
+
+    def start(self):
+        self.output.start()
+
+    def pause(self):
+        self.output.suspend()

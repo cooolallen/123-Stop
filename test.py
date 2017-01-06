@@ -134,3 +134,71 @@ video_capture.release()
 cv2.destroyAllWindows()
 """
 
+# from UI import *
+import cv2
+
+# if __name__ == "__main__":
+#     app = QApplication(sys.argv)
+#     test = audio_player('./test.mp3')
+#
+#     test.start()
+#     while True:
+#         print('ffff')
+#         if cv2.waitKey(1) & 0xFF == ord('q'):
+#             break
+#
+#     test.pause()
+#
+#     while True:
+#         if cv2.waitKey(1) & 0xFF == ord('q'):
+#             break
+#
+#
+#
+#     sys.exit(app.exec_())
+
+from UI import *
+from PyQt5 import QtCore
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtMultimedia import QAudioOutput, QAudioFormat
+import sys
+
+app = QApplication(sys.argv)
+count = 0
+# music = audio_player('/Users/cooolallen1/Desktop/test.mp3')
+# music.start()
+# music.output
+
+music = QSound('test.mp3')
+
+music.play()
+while(count<=100000):
+    # print(music.output.state())
+    print("count: ", count)
+    count = count + 1
+music.stop()
+print("music pause")
+# music.stream.stop_stream()
+# music.stream.close()
+# music.p.terminate()
+music.destroy()
+sys.exit(app.exec_())
+
+
+
+# app=QApplication(sys.argv) #1st Edit
+#
+# output=QAudioOutput()
+#
+# soundFile=QtCore.QFile()
+# soundFile.setFileName("./test.mp3")
+# soundFile.open(QtCore.QIODevice.ReadOnly)
+#
+# output.start(soundFile)
+#
+#
+#
+# while True:
+#     print(output.state())
+# app.exec_()                #1st Edit
