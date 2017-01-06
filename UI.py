@@ -152,10 +152,10 @@ class GuessWhatDialog(QDialog):
             # self.timer.timeout.disconnect(self.window_close)
             self.close()
             self.message.close()
-            # if(self.result=='win'):
-            #     self.parent.mode1_trigger()
-            # else:
-            self.parent.mode2_trigger()
+            if(self.result=='win'):
+                self.parent.mode1_trigger()
+            else:
+                self.parent.mode2_trigger()
 
 class MessageDialog(QDialog):
     def __init__(self,state,parent=None):
@@ -221,9 +221,9 @@ class Table(QDialog):
         super(Table, self).__init__(parent)
         self.ui = Ui_Table()
         self.ui.setupUi(self)
-        self.nameList = None
         self.directory = './scoreboard.csv'
-
+        self.parent = parent
+        self.nameList = self.loadData()
 
     def show_event(self):
         self.buildTable()
@@ -255,13 +255,14 @@ class Table(QDialog):
         names = []
         scores = []
 
-
         if os.path.exists(self.directory):
             with open(self.directory) as f:
                 f_csv = csv.reader(f)
-                for key,name, score in f_csv:
-                    names.append(name)
-                    scores.append(score)
+                for row in f_csv:
+                    print(row)
+                    if row !=[]:
+                        names.append(row[0])
+                        scores.append(row[1])
 
                 nameList.append(names)
                 nameList.append(scores)
@@ -273,14 +274,14 @@ class Table(QDialog):
     def record(self,mode,result,time=None):
 
         if mode=='mode1':
-            self.nameList[0].append(parent.playerName)
+            self.nameList[0].append(self.parent.playerName)
             if result:
                 self.nameList[1].append(str(time)+'(mode1)')
             else:
                 self.nameList[1].append('mode1 fail('+str(time)+')')
 
         elif mode=='mode2':
-            self.nameList[0].append(parent.playerName)
+            self.nameList[0].append(self.parent.playerName)
             if result:
                 self.nameList[1].append(str(time) + '(mode2)')
             else:
@@ -288,9 +289,9 @@ class Table(QDialog):
         else:
             print('record data error')
 
-        with open(self.directory) as f:
+        with open(self.directory,'w') as f:
             f_csv = csv.writer(f)
-            for name,score in len(self.nameList[0]):
-                f_csv.writerow([name,score])
+            for key in range(len(self.nameList[0])):
+                f_csv.writerow([self.nameList[0][key],self.nameList[1][key]])
 
 

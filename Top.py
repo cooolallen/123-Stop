@@ -202,7 +202,7 @@ def mode1_camera():
         else:
             myMessage.close()
             player_win_img = cv2.imread('./figures/player_lose.png')
-            mainWindow.table.record('mode1',False,,time.time()-start_time)
+            mainWindow.table.record('mode1',False,time.time()-start_time)
             cv2.imshow(winName, cv2.resize(player_win_img, (640, 480)))
     else:
         cv2.destroyWindow(winName)
@@ -265,6 +265,7 @@ def mode2_camera():
     h_random = -1
     r_n = -1
     judge = JudgeDialog(r_n)
+    start_time = time.time()
     while True:
         # Capture frame-by-frame
         frame = cam.read()[1]
@@ -312,11 +313,11 @@ def mode2_camera():
     # Judge result
     if judge.result:#win
         player_win_img = cv2.imread('./figures/player_win.png')
-        mainWindow.table.record('mode1',True,time.time()-start_time)
+        mainWindow.table.record('mode2',True,time.time()-start_time)
         cv2.imshow(winName, cv2.resize(player_win_img, (640, 480)))
     else:#lose
         player_win_img = cv2.imread('./figures/player_lose2.png')
-        mainWindow.table.record('mode1',False,time.time()-start_time)
+        mainWindow.table.record('mode2',False,time.time()-start_time)
         cv2.imshow(winName, cv2.resize(player_win_img, (640, 480)))
 
     # wait and quit
