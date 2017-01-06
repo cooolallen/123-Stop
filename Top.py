@@ -6,9 +6,12 @@ import random
 import threading
 import pyaudio
 import wave
+import time
 
 from UI import *
 # set duration(frame number) for next 123 stop
+global mainWindow
+
 FRAME_THRES = 100
 def mode1_camera():
     # Initial setup.
@@ -64,7 +67,7 @@ def mode1_camera():
     # Buffer fill in .
     t = cv2.cvtColor(cam.read()[1], cv2.COLOR_BGR2GRAY)
     t_plus = cv2.cvtColor(cam.read()[1], cv2.COLOR_BGR2GRAY)
-
+    start_time = time.time()
     approach = False
     while True:
         # Pushing back
@@ -194,10 +197,13 @@ def mode1_camera():
         if result:
             myMessage.close()
             player_win_img = cv2.imread('./figures/player_win.png')
+            mainWindow.table.record('mode1',True,time.time()-start_time)
             cv2.imshow(winName, cv2.resize(player_win_img, (640, 480)))
         else:
-            myMessage.state = 'catched'
-            myMessage.setPicture()
+            myMessage.close()
+            player_win_img = cv2.imread('./figures/player_lose.png')
+            mainWindow.table.record('mode1',False,,time.time()-start_time)
+            cv2.imshow(winName, cv2.resize(player_win_img, (640, 480)))
     else:
         cv2.destroyWindow(winName)
         cam.release()
@@ -291,15 +297,36 @@ def mode2_camera():
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
+        if judge.result is not None:
+            break
+
+
         # Display the resulting frame
         cv2.imshow(winName, cv2.resize(frame, (640, 480)))
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+            cv2.destroyWindow(winName)
+            cam.release()
+            return
 
-    # When everything is done, release the capture
-    cam.release()
-    cv2.destroyAllWindows()
+    # Judge result
+    if judge.result:#win
+        player_win_img = cv2.imread('./figures/player_win.png')
+        mainWindow.table.record('mode1',True,time.time()-start_time)
+        cv2.imshow(winName, cv2.resize(player_win_img, (640, 480)))
+    else:#lose
+        player_win_img = cv2.imread('./figures/player_lose2.png')
+        mainWindow.table.record('mode1',False,time.time()-start_time)
+        cv2.imshow(winName, cv2.resize(player_win_img, (640, 480)))
+
+    # wait and quit
+    while True:
+        k = cv2.waitKey(10)
+        if k == ord('q'):
+            # When everything is done, release the capture
+            cv2.destroyWindow(winName)
+            cam.release()
+            break
 
 def diffImg(t0, t1, t2):
     d1 = cv2.absdiff(t2, t1)

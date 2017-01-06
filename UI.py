@@ -2,6 +2,8 @@ from PyQt5 import QtCore
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtMultimedia import QAudioOutput, QAudioFormat
+import csv
+import os
 import sys
 import cv2
 
@@ -12,6 +14,7 @@ from ui_MainWindow import Ui_MainWindow
 from ui_GuessWhatDialog import Ui_GuessWhatDialog
 from ui_MessageDialog import Ui_MessageDialog
 from ui_JudgeDialog import Ui_JudgeDialog
+from ui_Table import Ui_Table
 
 class MainWindow(QMainWindow):
     def __init__(self,mode1_fun,mode2_fun,parent=None):
@@ -21,21 +24,34 @@ class MainWindow(QMainWindow):
         self.guessDialog = None
         self.mode1_fun = mode1_fun
         self.mode2_fun = mode2_fun
-        self.ui.verticalLayout_2.setStretch(0,100)
+        self.ui.verticalLayout_2.setStretch(0,200)#100
+        self.table = Table(self)
+        self.playerName = ""
         self.show()
 
         # Connection
         self.ui.PlayButton.clicked.connect(self.showGuess)
+        self.ui.ScoreButton.clicked.connect(self.showTable)
+        self.ui.lineEdit.editingFinished.connect(self.setNewUser)
 
     def showGuess(self):
-        self.guessDialog = GuessWhatDialog(self)
+        self.playerName = self.ui.lineEdit.text()
+        if self.playerName == '':
+            QMessageBox.warning(self,'User Name Input','Please enter your name!!')
+        else:
+            self.guessDialog = GuessWhatDialog(self)
+
+    def showTable(self):
+        self.table.show_event()
+
+    def setNewUser(self):
+        self.playerName = self.ui.lineEdit.text()
 
     def mode1_trigger(self):
         self.mode1_fun()
 
     def mode2_trigger(self):
         self.mode2_fun()
-
 
 class GuessWhatDialog(QDialog):
         def __init__(self,parent=None):
@@ -115,7 +131,7 @@ class GuessWhatDialog(QDialog):
                 print('you fair')
 
             self.message = MessageDialog(self.result, self)
-            self.timer_start(1500)
+            self.timer_start(1000)
 
         def timer_start(self,ms):
             if(self.result!='fair'):
@@ -137,9 +153,9 @@ class GuessWhatDialog(QDialog):
             self.close()
             self.message.close()
             # if(self.result=='win'):
-            self.parent.mode1_trigger()
+            #     self.parent.mode1_trigger()
             # else:
-            # self.parent.mode2_trigger()
+            self.parent.mode2_trigger()
 
 class MessageDialog(QDialog):
     def __init__(self,state,parent=None):
@@ -174,6 +190,7 @@ class JudgeDialog(QDialog):
         self.ui = Ui_JudgeDialog()
         self.ui.setupUi(self)
         self.num = num
+        self.result = None
 
         self.show()
 
@@ -184,46 +201,96 @@ class JudgeDialog(QDialog):
         num_guess = self.ui.LineEditGuess.text()
         if num_guess == str(self.num):
             print('you win')
+            self.result = True
+            self.close()
+
         else:
             cur_chance_num = int(self.ui.LabelChanceNum.text())
 
-            if cur_chance_num==0:
+            if cur_chance_num==1:
                 print('you lose')
+                self.result = False
+                self.close()
             else:
                 self.ui.LabelChanceNum.setText(str(cur_chance_num-1))
 
         self.ui.LineEditGuess.clear()
 
+class Table(QDialog):
+    def __init__(self,parent=None):
+        super(Table, self).__init__(parent)
+        self.ui = Ui_Table()
+        self.ui.setupUi(self)
+        self.nameList = None
+        self.directory = './scoreboard.csv'
 
 
+    def show_event(self):
+        self.buildTable()
+        self.show()
+
+    def buildTable(self):
+        self.nameList = self.loadData()
+        name_sz = len(self.nameList[0])
+
+        self.ui.TableHolder.clear()
+        self.ui.TableHolder.setColumnCount(2)
+        self.ui.TableHolder.setHorizontalHeaderItem(0, QTableWidgetItem("Name"))
+        self.ui.TableHolder.setHorizontalHeaderItem(1, QTableWidgetItem("time (s)"))
+        self.ui.TableHolder.setColumnWidth(0, 50)
+        self.ui.TableHolder.setColumnWidth(1, 120)
+        self.ui.TableHolder.setRowCount(name_sz)
+
+        if self.nameList != []:
+            for key in range(name_sz):
+                newitem = QTableWidgetItem(self.nameList[0][key])
+                self.ui.TableHolder.setItem(key,0,newitem)
+                self.ui.TableHolder.item(key,0).setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+                newitem = QTableWidgetItem(self.nameList[1][key])
+                self.ui.TableHolder.setItem(key,1,newitem)
+                self.ui.TableHolder.item(key, 1).setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+
+    def loadData(self):
+        nameList = []
+        names = []
+        scores = []
 
 
+        if os.path.exists(self.directory):
+            with open(self.directory) as f:
+                f_csv = csv.reader(f)
+                for key,name, score in f_csv:
+                    names.append(name)
+                    scores.append(score)
 
-class audio_player():
-    def __init__(self,name):
-        self.format = QAudioFormat()  # 2nd Edit
-        # test = QAudioFormat()
+                nameList.append(names)
+                nameList.append(scores)
+        else:
+            nameList = []
 
-        # test.setsamplet
-        self.format.setChannelCount(1)  # 2nd Edit
-        self.format.setSampleRate(22050)  # 2nd Edit
-        self.format.setSampleSize(16)  # 2nd Edit
-        self.format.setCodec("audio/pcm")  # 2nd Edit
-        self.format.setByteOrder(QAudioFormat.LittleEndian)  # 2nd Edit
-        self.format.setSampleType(QAudioFormat.SignedInt)  # 2nd Edit
+        return nameList
+
+    def record(self,mode,result,time=None):
+
+        if mode=='mode1':
+            self.nameList[0].append(parent.playerName)
+            if result:
+                self.nameList[1].append(str(time)+'(mode1)')
+            else:
+                self.nameList[1].append('mode1 fail('+str(time)+')')
+
+        elif mode=='mode2':
+            self.nameList[0].append(parent.playerName)
+            if result:
+                self.nameList[1].append(str(time) + '(mode2)')
+            else:
+                self.nameList[1].append('mode2 fail(' + str(time) + ')')
+        else:
+            print('record data error')
+
+        with open(self.directory) as f:
+            f_csv = csv.writer(f)
+            for name,score in len(self.nameList[0]):
+                f_csv.writerow([name,score])
 
 
-        self.output = QAudioOutput(self.format)
-        self.soundFile = QtCore.QFile()
-        self.soundFile.setFileName(name)
-        self.soundFile.open(QtCore.QIODevice.ReadOnly)
-        self.output.start(self.soundFile)
-
-        print(self.soundFile,'<-------------------------')
-        # self.output.suspend()
-
-    def start(self):
-        self.output.start()
-
-    def pause(self):
-        self.output.suspend()
