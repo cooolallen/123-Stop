@@ -137,9 +137,9 @@ class GuessWhatDialog(QDialog):
             self.close()
             self.message.close()
             # if(self.result=='win'):
-            #     self.parent.mode1_trigger()
+            self.parent.mode1_trigger()
             # else:
-            self.parent.mode2_trigger()
+            # self.parent.mode2_trigger()
 
 class MessageDialog(QDialog):
     def __init__(self,state,parent=None):
@@ -190,7 +190,7 @@ class JudgeDialog(QDialog):
             if cur_chance_num==0:
                 print('you lose')
             else:
-                self.uiLabelChanceNum.setText(str(cur_chance_num-1))
+                self.ui.LabelChanceNum.setText(str(cur_chance_num-1))
 
         self.ui.LineEditGuess.clear()
 

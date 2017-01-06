@@ -3,24 +3,32 @@ from PyQt5.QtWidgets import QApplication
 import sys
 import cv2
 import random
+import threading
+import pyaudio
+import wave
 
 from UI import *
-
-
+# set duration(frame number) for next 123 stop
+FRAME_THRES = 100
 def mode1_camera():
     # Initial setup.
     faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
     cam = cv2.VideoCapture(0)
     winName = "Mode1"
     cv2.namedWindow(winName, cv2.WINDOW_AUTOSIZE)
-    bb_thres = 200  # 100
+    bb_thres = 100# 200  # 100
     approach_thres = 50
     thres = 20
-    flag = False
+    # Cary
+    while_break = False
+    frame_duration = 100
+    # 
     start = False
     count = 0  # duration
     myMessage = None
     result = None
+    t1 = threading.Thread(target=play_music, args=())
+
 
     while not start:
         color_img = cam.read()[1]
@@ -66,6 +74,14 @@ def mode1_camera():
         gray = cv2.cvtColor(color_img, cv2.COLOR_RGB2GRAY)
         t_plus = gray
 
+        # whether the music has to play
+        if(t1.isAlive()==False):
+            t1 = threading.Thread(target=play_music, args=())
+        if(t1.isAlive()==False and frame_duration>=FRAME_THRES):
+            frame_duration = 0
+            t1.start()
+            
+
         # Face detection
         faces = faceCascade.detectMultiScale(
             gray,
@@ -110,20 +126,25 @@ def mode1_camera():
             total = total / (w * h)
             print(total)
             if (total > thres):  # and flag==0):
-                flag = True
                 cv2.rectangle(color_img, (start_x, y), (end_x, end_y), (0, 0, 255), 2)  # BGR
-                print("You MOVE")
-                if myMessage is not None:
-                    myMessage.state = 'move'
-                    myMessage.setPicture()
+                # if music stop
+                if not t1.isAlive():
+                    print("You MOVE")
+                    frame_duration = frame_duration + 1
+                    if myMessage is not None:
+                        myMessage.state = 'move'
+                        myMessage.setPicture()
+                    while_break = True
 
             elif (total <= thres):  # and flag == 1):
-                flag = False
                 cv2.rectangle(color_img, (start_x, y), (end_x, end_y), (0, 255, 0), 2)
-                print("Freeze")
-                if myMessage is not None:
-                    myMessage.state = 'freeze'
-                    myMessage.setPicture()
+                # if music stop
+                if not t1.isAlive():
+                    print("Freeze")
+                    frame_duration = frame_duration + 1
+                    if myMessage is not None:
+                        myMessage.state = 'freeze'
+                        myMessage.setPicture()
 
         # Approach
         if (approach and len(faces) == 0):
@@ -133,14 +154,30 @@ def mode1_camera():
             total = total / (w * h)
             print(total)
             if (total > approach_thres):  # and flag==0):
-                flag = 1
                 cv2.rectangle(color_img, (approach_start_x, 0), (approach_end_x, size[0]), (0, 0, 255), 2)  # BGR
-                print("You MOVE APPROACH")
+                # if music stop
+                if not t1.isAlive():
+                    print("You MOVE APPROACH")
+                    frame_duration = frame_duration + 1
+                    if myMessage is not None:
+                        myMessage.state = 'move'
+                        myMessage.setPicture()
+                    while_break = True
             elif (total <= approach_thres):  # and flag ==1):
-                flag = 0
                 cv2.rectangle(color_img, (approach_start_x, 0), (approach_end_x, size[0]), (0, 255, 0), 2)
-                print("Freeze APPROACH")
-
+                # if music stop
+                if not t1.isAlive():
+                    frame_duration = frame_duration + 1
+                    print("Freeze APPROACH")
+                    if myMessage is not None:
+                        myMessage.state = 'freeze'
+                        myMessage.setPicture()
+        # print for checking time
+        print(frame_duration)
+        # detect moving
+        if(while_break):
+            result = False
+            break
         # update frame
         cv2.imshow(winName, cv2.resize(color_img, (640, 480)))
 
@@ -268,6 +305,50 @@ def diffImg(t0, t1, t2):
     d1 = cv2.absdiff(t2, t1)
     d2 = cv2.absdiff(t1, t0)
     return cv2.bitwise_and(d1, d2)
+
+def play_music():
+    CHUNK = 1024
+    # play 123
+    song_front = random.randint(0,3)
+    if(song_front==0):
+        music_name = '123_slow.wav'
+    elif(song_front==1):
+        music_name = '123_median.wav'
+    else:
+        music_name = '123_quick.wav'
+
+    wf = wave.open(music_name, 'rb')
+    p = pyaudio.PyAudio()
+    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                    channels=wf.getnchannels(),
+                    rate=wf.getframerate(),
+                    output=True)
+
+    data = wf.readframes(CHUNK)
+    while(data!=''):
+        stream.write(data)
+        data = wf.readframes(CHUNK)
+
+    # play stop
+    song_back = random.randint(0,3)  
+    if(song_back==0):
+        music_name = 'stop_slow.wav'
+    elif(song_back==1):
+        music_name = 'stop_median.wav'
+    else:
+        music_name = 'stop_quick.wav'
+    wf = wave.open(music_name, 'rb')
+    p = pyaudio.PyAudio()
+    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                    channels=wf.getnchannels(),
+                    rate=wf.getframerate(),
+                    output=True)
+
+    data = wf.readframes(CHUNK)
+    while(data!=''):
+        stream.write(data)
+        data = wf.readframes(CHUNK)
+    return
 
 def random_number(frame,w_random,h_random,r_n,count,range):
 
