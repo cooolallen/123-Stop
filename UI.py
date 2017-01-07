@@ -61,7 +61,7 @@ class GuessWhatDialog(QDialog):
             self.result = []
             self.comp = []
             self.timer = QtCore.QTimer()
-            self.message = []
+            self.message = None
             self.parent = parent
 
             self.ui.ScissorButton.setIcon(QIcon("./figures/scissor.png"))
@@ -130,21 +130,39 @@ class GuessWhatDialog(QDialog):
             else:#Fair
                 print('you fair')
 
-            self.message = MessageDialog(self.result, self)
+            if self.message is None:
+                self.message = MessageDialog(self.result, self)
+            else:
+                self.message.state = self.result
+                self.message.setPicture()
+
             self.timer_start(1000)
 
         def timer_start(self,ms):
+
+            self.timer.stop()
+            self.timer.start(ms)
+
+            try:
+                self.timer.timeout.disconnect(self.window_close)
+            except:
+                pass
+
+            try:
+                self.timer.timeout.connect(self.message_close)
+            except:
+                pass
+
             if(self.result!='fair'):
-                self.timer.start(ms)
                 self.timer.timeout.connect(self.window_close)
             else:
-                self.timer.start(ms)
                 self.timer.timeout.connect(self.message_close)
+
 
         def message_close(self):
             self.timer.stop()
             self.message.close()
-            self.timer.timeout.disconnect(self.message_close)
+            # self.timer.timeout.disconnect(self.message_close)
             self.activateWindow()
 
         def window_close(self):
@@ -237,8 +255,8 @@ class Table(QDialog):
         self.ui.TableHolder.setColumnCount(2)
         self.ui.TableHolder.setHorizontalHeaderItem(0, QTableWidgetItem("Name"))
         self.ui.TableHolder.setHorizontalHeaderItem(1, QTableWidgetItem("time (s)"))
-        self.ui.TableHolder.setColumnWidth(0, 50)
-        self.ui.TableHolder.setColumnWidth(1, 120)
+        self.ui.TableHolder.setColumnWidth(0, 100)
+        self.ui.TableHolder.setColumnWidth(1, 160)
         self.ui.TableHolder.setRowCount(name_sz)
 
         if self.nameList != []:
@@ -276,16 +294,16 @@ class Table(QDialog):
         if mode=='mode1':
             self.nameList[0].append(self.parent.playerName)
             if result:
-                self.nameList[1].append(str(time)+'(mode1)')
+                self.nameList[1].append(str(time)[0:4]+'(mode1)')
             else:
-                self.nameList[1].append('mode1 fail('+str(time)+')')
+                self.nameList[1].append('mode1 fail('+str(time)[0:4]+')')
 
         elif mode=='mode2':
             self.nameList[0].append(self.parent.playerName)
             if result:
-                self.nameList[1].append(str(time) + '(mode2)')
+                self.nameList[1].append(str(time)[0:4] + '(mode2)')
             else:
-                self.nameList[1].append('mode2 fail(' + str(time) + ')')
+                self.nameList[1].append('mode2 fail(' + str(time)[0:4] + ')')
         else:
             print('record data error')
 

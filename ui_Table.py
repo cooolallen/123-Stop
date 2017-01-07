@@ -11,10 +11,9 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Table(object):
     def setupUi(self, Table):
         Table.setObjectName("Table")
-        Table.resize(334, 264)
-        Table.setStyleSheet("QDialog{\n"
-"\n"
-"background:\n"
+        Table.resize(391, 220)
+        Table.setStyleSheet("Table{\n"
+"background:url(./figures/table_background.jpg);\n"
 "}")
         self.gridLayout_2 = QtWidgets.QGridLayout(Table)
         self.gridLayout_2.setObjectName("gridLayout_2")
@@ -42,14 +41,15 @@ class Ui_Table(object):
         self.verticalLayout.setObjectName("verticalLayout")
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout.addItem(spacerItem)
-        self.RemoveButton = QtWidgets.QPushButton(Table)
-        self.RemoveButton.setObjectName("RemoveButton")
-        self.verticalLayout.addWidget(self.RemoveButton)
+        self.OkButton = QtWidgets.QPushButton(Table)
+        self.OkButton.setObjectName("OkButton")
+        self.verticalLayout.addWidget(self.OkButton)
         self.horizontalLayout.addLayout(self.verticalLayout)
         self.gridLayout.addLayout(self.horizontalLayout, 0, 0, 1, 1)
         self.gridLayout_2.addLayout(self.gridLayout, 0, 0, 1, 1)
 
         self.retranslateUi(Table)
+        self.OkButton.clicked.connect(Table.accept)
         QtCore.QMetaObject.connectSlotsByName(Table)
 
     def retranslateUi(self, Table):
@@ -59,5 +59,5 @@ class Ui_Table(object):
         item.setText(_translate("Table", "Index"))
         item = self.TableHolder.horizontalHeaderItem(1)
         item.setText(_translate("Table", "Name"))
-        self.RemoveButton.setText(_translate("Table", "Checked"))
+        self.OkButton.setText(_translate("Table", "Ok"))
 
