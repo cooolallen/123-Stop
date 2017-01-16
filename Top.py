@@ -9,22 +9,26 @@ import wave
 import time
 
 from UI import *
-# set duration(frame number) for next 123 stop
-global mainWindow
 
-FRAME_THRES = 100
+global mainWindow
+# set duration(frame number) for next 123 stop
+
+FRAME_THRES = 35
 def mode1_camera():
     # Initial setup.
     faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
     cam = cv2.VideoCapture(0)
+    
     winName = "Mode1"
     cv2.namedWindow(winName, cv2.WINDOW_AUTOSIZE)
-    bb_thres = 100# 200  # 100
-    approach_thres = 50
-    thres = 20
+    bb_thres = 65 # 200  # 100
+    approach_thres = 1.5
+    thres = 2
     # Cary
     while_break = False
     frame_duration = 100
+    MOVE_THRES = 5
+    # f = open('Cary_stop.txt', 'w')
     # 
     start = False
     count = 0  # duration
@@ -59,10 +63,13 @@ def mode1_camera():
                 start = True
             cv2.rectangle(color_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-        cv2.imshow(winName, cv2.resize(color_img, (640, 480)))
+        # cv2.imshow(winName, cv2.resize(color_img, (640, 480)))
+        cv2.imshow(winName, cv2.resize(color_img, (960, 720)))
         if cv2.waitKey(10) & 0xFF == ord('q'):
             break
-
+    if myMessage is not None:
+        myMessage.close()
+    
     print("=============================================================================")
     # Buffer fill in .
     t = cv2.cvtColor(cam.read()[1], cv2.COLOR_BGR2GRAY)
@@ -81,6 +88,7 @@ def mode1_camera():
         if(t1.isAlive()==False):
             t1 = threading.Thread(target=play_music, args=())
         if(t1.isAlive()==False and frame_duration>=FRAME_THRES):
+            count = 0
             frame_duration = 0
             t1.start()
             
@@ -118,26 +126,30 @@ def mode1_camera():
                 end_y = index
 
             # Energy Calculation
-            if (end_y - y >= size[0] - 10):
-                approach = True
-                approach_start_x = 0
-                approach_end_x = size[1]
+            # if (end_y - y >= size[0] - 10):
+            #     approach = True
+            #     approach_start_x = 0
+            #     approach_end_x = size[1]
 
             total = 0
             for row in temp[y:end_y + 1]:
                 total = total + sum(row[start_x:end_x + 1])
-            total = total / (w * h)
+            total = total / ((end_x-start_x) * (end_y-y))
             print(total)
+            # f.write("%s, %s\n" % (str(total),str((end_x-start_x) * (end_y-y))))
             if (total > thres):  # and flag==0):
                 cv2.rectangle(color_img, (start_x, y), (end_x, end_y), (0, 0, 255), 2)  # BGR
                 # if music stop
-                if not t1.isAlive():
-                    print("You MOVE")
+                if (t1.isAlive()==0):
+                    count = count + 1
                     frame_duration = frame_duration + 1
-                    if myMessage is not None:
-                        myMessage.state = 'move'
-                        myMessage.setPicture()
-                    while_break = True
+
+                    if(count>=MOVE_THRES):
+                        # print("You MOVE")
+                        # if myMessage is not None:
+                        #     myMessage.state = 'move'
+                        #     myMessage.setPicture()
+                        while_break = True
 
             elif (total <= thres):  # and flag == 1):
                 cv2.rectangle(color_img, (start_x, y), (end_x, end_y), (0, 255, 0), 2)
@@ -145,36 +157,42 @@ def mode1_camera():
                 if not t1.isAlive():
                     print("Freeze")
                     frame_duration = frame_duration + 1
-                    if myMessage is not None:
-                        myMessage.state = 'freeze'
-                        myMessage.setPicture()
+                    # if myMessage is not None:
+                    #     myMessage.state = 'freeze'
+                    #     myMessage.setPicture()
 
         # Approach
-        if (approach and len(faces) == 0):
+        if (len(faces) == 0):
             total = 0
             for row in temp[0:size[0] + 1]:
-                total = total + sum(row[approach_start_x:approach_end_x + 1])
-            total = total / (w * h)
+                # total = total + sum(row[approach_start_x:approach_end_x + 1])
+                total = total + sum(row[0:size[1] + 1])
+            total = total / (size[0] * size[1])
             print(total)
+            # f.write("%s, %s\n" % (str(total),str(size[0]*size[1])))
             if (total > approach_thres):  # and flag==0):
-                cv2.rectangle(color_img, (approach_start_x, 0), (approach_end_x, size[0]), (0, 0, 255), 2)  # BGR
+                # cv2.rectangle(color_img, (approach_start_x, 0), (approach_end_x, size[0]), (0, 0, 255), 2)  # BGR
+                cv2.rectangle(color_img, (0, 0), (size[1], size[0]), (0, 0, 255), 2)  # BGR
                 # if music stop
-                if not t1.isAlive():
-                    print("You MOVE APPROACH")
+                if(t1.isAlive()==0):
+                    count = count + 1 
                     frame_duration = frame_duration + 1
-                    if myMessage is not None:
-                        myMessage.state = 'move'
-                        myMessage.setPicture()
-                    while_break = True
+                    if(count >= MOVE_THRES):
+                        # print("You MOVE APPROACH")
+                        # if myMessage is not None:
+                        #     myMessage.state = 'move'
+                        #     myMessage.setPicture()
+                        while_break = True
             elif (total <= approach_thres):  # and flag ==1):
-                cv2.rectangle(color_img, (approach_start_x, 0), (approach_end_x, size[0]), (0, 255, 0), 2)
+                # cv2.rectangle(color_img, (approach_start_x, 0), (approach_end_x, size[0]), (0, 255, 0), 2)
+                cv2.rectangle(color_img, (0, 0), (size[1], size[0]), (0, 255, 0), 2)
                 # if music stop
                 if not t1.isAlive():
                     frame_duration = frame_duration + 1
-                    print("Freeze APPROACH")
-                    if myMessage is not None:
-                        myMessage.state = 'freeze'
-                        myMessage.setPicture()
+                    # print("Freeze APPROACH")
+                    # if myMessage is not None:
+                    #     myMessage.state = 'freeze'
+                    #     myMessage.setPicture()
         # print for checking time
         print(frame_duration)
         # detect moving
@@ -182,7 +200,8 @@ def mode1_camera():
             result = False
             break
         # update frame
-        cv2.imshow(winName, cv2.resize(color_img, (640, 480)))
+        # cv2.imshow(winName, cv2.resize(color_img, (640, 480)))
+        cv2.imshow(winName, cv2.resize(color_img, (960, 720)))
 
         k = cv2.waitKey(10)
         if k == ord('q'):
@@ -192,6 +211,9 @@ def mode1_camera():
             result = True
             break
 
+    # show the last picture when the program breaks the while loop
+    # cv2.imshow(winName, cv2.resize(color_img, (640, 480)))
+    cv2.imshow(winName, cv2.resize(color_img, (960, 720)))
     ## Result Judge
     if result is not None:
         if result:
@@ -221,6 +243,7 @@ def mode2_camera():
     # Initial Setup
     faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
     cam = cv2.VideoCapture(0)
+    
     winName = "Mode2"
     cv2.namedWindow(winName, cv2.WINDOW_AUTOSIZE)
     start = False
@@ -254,7 +277,8 @@ def mode2_camera():
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
         # Display the resulting frame
-        cv2.imshow(winName, cv2.resize(frame, (640, 480)))
+        # cv2.imshow(winName, cv2.resize(frame, (640, 480)))
+        cv2.imshow(winName, cv2.resize(frame, (960, 720)))
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -303,7 +327,8 @@ def mode2_camera():
 
 
         # Display the resulting frame
-        cv2.imshow(winName, cv2.resize(frame, (640, 480)))
+        # cv2.imshow(winName, cv2.resize(frame, (640, 480)))
+        cv2.imshow(winName, cv2.resize(frame, (960, 720)))
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             cv2.destroyWindow(winName)
@@ -338,6 +363,7 @@ def play_music():
     CHUNK = 1024
     # play 123
     song_front = random.randint(0,3)
+    # music_name = 'Sweet.wav'
     if(song_front==0):
         music_name = '123_slow.wav'
     elif(song_front==1):
@@ -391,7 +417,7 @@ def random_number(frame,w_random,h_random,r_n,count,range):
         # w_random = 1280- 190
         # h_random = 720 - 30
 
-    cv2.putText(frame, str(r_n), (h_random,w_random), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 5, (0, 0, 255), 3, 8)
+    cv2.putText(frame, str(r_n), (h_random,w_random), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 3, (0, 0, 255), 2, 4)
 
     return frame,w_random,h_random,r_n
 
